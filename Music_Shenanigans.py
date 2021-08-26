@@ -321,6 +321,100 @@ def interval_calc(lower_note, upper_note):
     interval = interval + (octave_diff * 7)
     return interval
 
+def precise_interval_calc(lower_note, upper_note):
+    """
+    given lower and upper note object, returns the true interval as string (includes extensions above an octave)
+    (does produce a diminished 1 interval if the notes are not ordered properly)
+    """
+    root_list = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
+    lower_number = root_list.index(lower_note.name)
+    upper_number = root_list.index(upper_note.name)
+    bass_interval = (upper_number - lower_number) + 1
+    octave_diff = upper_note.pitch - lower_note.pitch
+    bass_interval = bass_interval + (octave_diff * 7)
+    # ^calculates the bass interval
+
+    full_list = ['C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B',
+                 'C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B']
+    lower_number_in_full = full_list.index(lower_note.name)
+    if lower_note.acci == "bb":
+        true_lower_number = lower_number_in_full - 2
+    elif lower_note.acci == "b":
+        true_lower_number = lower_number_in_full - 1
+    elif lower_note.acci == "n":
+        true_lower_number = lower_number_in_full
+    elif lower_note.acci == "#":
+        true_lower_number = lower_number_in_full + 1
+    elif lower_note.acci == "x":
+        true_lower_number = lower_number_in_full + 2
+    # ^finds the true lower number value based on name and acci (can go all the way down to -2)
+
+    if true_lower_number in [-1, -2]:
+        upper_number_in_full = full_list.index(upper_note.name)
+    else:
+        updated_full_list = full_list[true_lower_number: ]
+        upper_number_in_full = updated_full_list.index(upper_note.name)
+    # ^modifies the full_list based on the true lower number
+
+    if upper_note.acci == "bb":
+        true_upper_number = upper_number_in_full - 2
+    elif upper_note.acci == "b":
+        true_upper_number = upper_number_in_full - 1
+    elif upper_note.acci == "n":
+        true_upper_number = upper_number_in_full
+    elif upper_note.acci == "#":
+        true_upper_number = upper_number_in_full + 1
+    elif upper_note.acci == "x":
+        true_upper_number = upper_number_in_full + 2
+    if true_lower_number in [-1, -2]:
+        true_diff = true_upper_number - true_lower_number
+    else:
+        true_diff = true_upper_number
+    # ^calculates the actual difference between lower and upper note (in units of semitones)
+
+    if bass_interval % 7 == 1:
+        expected_diff = 0
+    elif bass_interval % 7 == 2:
+        expected_diff = 2
+    elif bass_interval % 7 == 3:
+        expected_diff = 4
+    elif bass_interval % 7 == 4:
+        expected_diff = 5
+    elif bass_interval % 7 == 5:
+        expected_diff = 7
+    elif bass_interval % 7 == 6:
+        expected_diff = 9
+    elif bass_interval % 7 == 0:
+        expected_diff = 11
+    # ^sets the expected semitone difference for the major/perfect versions of the intervals
+
+    if true_diff - expected_diff == -2:
+        quality = "d"
+    elif true_diff - expected_diff == -1:
+        if bass_interval in [1, 4, 5]:
+            quality = "d"
+        else:
+            quality = "m"
+    elif true_diff - expected_diff == 0:
+        if bass_interval in [1, 4, 5]:
+            quality = "P"
+        else:
+            quality = "M"
+    elif true_diff - expected_diff == 1:
+        quality = "a"
+    else:
+        return "i"
+    # ^based on the differences of the true and expected semitone differences, gives the bass interval a quality
+
+    true_interval = quality + str(bass_interval)
+    return true_interval
+
+def bass_interval(lower_note, upper_note):
+    """
+    given a lower and upper note object, returns the bass interval (not including the quality)
+    """
+    true_interval = precise_interval_calc(lower_note, upper_note)
+    return int(true_interval[1:])
 
 def all_possible_notes(list_of_note_objects, lower_bound_note, upper_bound_note):
     """
@@ -401,7 +495,7 @@ def all_chord_configs(root_name, root_acci, fig_bass, doubled_note):
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        interval_result = interval_calc(cur_chord.bass, cur_chord.tenor)
+        interval_result = bass_interval(cur_chord.bass, cur_chord.tenor)
         if interval_result <= 12:
             filtered_chords.append(cur_chord)
     chord_configs = copy.deepcopy(filtered_chords)
@@ -440,7 +534,7 @@ def all_chord_configs(root_name, root_acci, fig_bass, doubled_note):
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        interval_result = interval_calc(cur_chord.tenor, cur_chord.alto)
+        interval_result = bass_interval(cur_chord.tenor, cur_chord.alto)
         if interval_result <= 8:
             filtered_chords.append(cur_chord)
     chord_configs = copy.deepcopy(filtered_chords)
@@ -471,7 +565,7 @@ def all_chord_configs(root_name, root_acci, fig_bass, doubled_note):
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        interval_result = interval_calc(cur_chord.alto, cur_chord.soprano)
+        interval_result = bass_interval(cur_chord.alto, cur_chord.soprano)
         if interval_result <= 8:
             filtered_chords.append(cur_chord)
     chord_configs = copy.deepcopy(filtered_chords)
@@ -518,9 +612,9 @@ def chord_priority_updates(chord):
         priority += 1
     # ^lowers priority based on soft caps in the soprano
 
-    interval_list = [interval_calc(chord.bass, chord.tenor),
-                     interval_calc(chord.tenor, chord.alto),
-                     interval_calc(chord.alto, chord.soprano)]
+    interval_list = [bass_interval(chord.bass, chord.tenor),
+                     bass_interval(chord.tenor, chord.alto),
+                     bass_interval(chord.alto, chord.soprano)]
     priority = priority + round(stats.stdev(interval_list), 3)
     # ^increases priority based on how good/bad the notes in the chord are spread out
 
@@ -578,14 +672,6 @@ def is_valid_progression(first_chord, second_chord):
     validity = True
     reason = ""
 
-    fifths_and_octaves_list = [[5, 12, 19, 26, 33], [1, 8, 15, 23, 30, 37]]
-    all_pairs = [['bass', 'tenor'],
-                 ['bass', 'alto'],
-                 ['bass', 'soprano'],
-                 ['tenor', 'alto'],
-                 ['tenor', 'soprano'],
-                 ['alto', 'soprano']]
-
     if note_movement(first_chord.tenor, second_chord.bass) == "Up":
         validity = False
         reason = "bass voice crosses"
@@ -600,39 +686,33 @@ def is_valid_progression(first_chord, second_chord):
     elif note_movement(first_chord.alto, second_chord.soprano) == "Down":
         validity = False
         reason = "soprano voice crosses"
+    # ^checks for voice crossings
 
-    list_number = 0
-    all_pairs_num = 0
-    real_val = False
-    while validity:
-        locals()['validity'] = True
-        local_dict = copy.deepcopy(locals())
-        program = "if interval_calc(first_chord." + all_pairs[all_pairs_num][0] + ", " + \
-                  "first_chord." + all_pairs[all_pairs_num][1] + ")" + \
-                  " in " + str(fifths_and_octaves_list[list_number]) + \
-                  " and interval_calc(second_chord." + all_pairs[all_pairs_num][0] + ", " + \
-                  "second_chord." + all_pairs[all_pairs_num][1] + ")" + \
-                  " in " + str(fifths_and_octaves_list[list_number]) + ":" + \
-                  "\n\tvalidity = False" + \
-                  "\n\treason = 'parallel 5th/8ths between " + all_pairs[all_pairs_num][0] + " and " + \
-                  all_pairs[all_pairs_num][1] + "'"
-
-        # print(program)
-
-        exec(program, globals(), local_dict)
-        validity = local_dict['validity']
-
-        if validity:
-            if list_number == 0:
-                list_number += 1
-            else:
-                list_number = 0
-                if all_pairs_num < 5:
-                    all_pairs_num += 1
-                else:
-                    validity = False
-                    real_val = True
-    validity = copy.deepcopy(real_val)
+    if precise_interval_calc(first_chord.bass, first_chord.tenor) in ["P1", "P5", "P8", "P12"] and \
+        precise_interval_calc(second_chord.bass, second_chord.tenor) == precise_interval_calc(first_chord.bass, first_chord.tenor):
+        validity = False
+        reason = "parallel movement between bass and tenor"
+    elif precise_interval_calc(first_chord.tenor, first_chord.alto) in ["P1", "P5", "P8", "P12"] and \
+            precise_interval_calc(second_chord.tenor, second_chord.alto) == precise_interval_calc(first_chord.tenor, first_chord.alto):
+        validity = False
+        reason = "parallel movement between tenor and alto"
+    elif precise_interval_calc(first_chord.alto, first_chord.soprano) in ["P1", "P5", "P8", "P12"] and \
+            precise_interval_calc(second_chord.alto, second_chord.soprano) == precise_interval_calc(first_chord.alto, first_chord.soprano):
+        validity = False
+        reason = "parallel movement between alto and soprano"
+    elif precise_interval_calc(first_chord.bass, first_chord.alto) in ["P1", "P5", "P8", "P12"] and \
+             precise_interval_calc(second_chord.bass, second_chord.alto) == precise_interval_calc(first_chord.bass, first_chord.alto):
+        validity = False
+        reason = "parallel movement between bass and alto"
+    elif precise_interval_calc(first_chord.bass, first_chord.soprano) in ["P1", "P5", "P8", "P12"] and \
+             precise_interval_calc(second_chord.bass, second_chord.soprano) == precise_interval_calc(first_chord.bass, first_chord.soprano):
+        validity = False
+        reason = "parallel movement between bass and soprano"
+    elif precise_interval_calc(first_chord.tenor, first_chord.soprano) in ["P1", "P5", "P8", "P12"] and \
+            precise_interval_calc(second_chord.tenor, second_chord.soprano) == precise_interval_calc(first_chord.tenor, first_chord.soprano):
+        validity = False
+        reason = "parallel movement between tenor and soprano"
+    # ^checks for parallel movement between the chords
 
     return validity
 
@@ -659,10 +739,10 @@ def find_progression_priority(first_chord, second_chord):
         local_dict = copy.deepcopy(locals())
 
         program = "if note_movement(first_chord." + list[i] + ", second_chord." + list[i] + ") == 'Up':" + \
-                  "\n\t" + list[i] + "_movement = interval_calc(first_chord." + list[i] + ", second_chord." + list[
+                  "\n\t" + list[i] + "_movement = bass_interval(first_chord." + list[i] + ", second_chord." + list[
                       i] + ")" + \
                   "\nelse:" + \
-                  "\n\t" + list[i] + "_movement = interval_calc(second_chord." + list[i] + ", first_chord." + list[
+                  "\n\t" + list[i] + "_movement = bass_interval(second_chord." + list[i] + ", first_chord." + list[
                       i] + ")"
 
         exec(program, globals(), local_dict)
@@ -794,20 +874,81 @@ def chord_spread(chord):
 
 if __name__ == '__main__':
     testfig1 = FigBass("I", "")
-    testfig2 = FigBass("V/ii", '7')
-    testfig3 = FigBass("ii", '')
-    testfig4 = FigBass("V/V", '4/2')
-    testfig5 = FigBass("V/iii", '4/3')
-    testfig6 = FigBass("V", '4/2')
-    testfig7 = FigBass("I", '6')
+    testfig2 = FigBass("ii", '7')
+    testfig3 = FigBass("V", '')
+    testfig4 = FigBass("vi", '')
 
-    testlist1 = [testfig1, testfig2, testfig3, testfig4, testfig5, testfig6, testfig7]
+    testlist1 = [testfig1, testfig2, testfig3, testfig4]
 
     find_best_progression("C", "n", testlist1)
 
 # TODO: implementation of secondary doms
 # TODO: implementation of doubling rules
+# TODO: add type hints for functions
+# TODO: implementation of open/direct 5ths and 8ths
 # TODO: max number of chords used for next generation (maybe use R to check viability of that)
 # TODO: filtering final chord list via specific notes (do it before generation to reduce time)
 # TODO: try and figure out if the sd thing is the best way of checking spread/ how it affects movement between chords
 # TODO: fix 9 warnings
+
+
+# ['Cn4', 'Gn4', 'Cn5', 'En5', 1.0]
+# ['Dn4', 'Fn4', 'Ab4', 'Cn5', 1.0]
+# ['Gn3', 'Dn4', 'Gn4', 'Bn4', 1.0]
+# ['An3', 'Cn4', 'En4', 'An4', 0.577]
+# 22.576999999999998
+# next
+# ['Cn3', 'Cn4', 'Gn4', 'En5', 2.528]
+# ['Dn3', 'Cn4', 'Fn4', 'Ab4', 3.082]
+# ['Gn3', 'Dn4', 'Gn4', 'Bn4', 1.0]
+# ['An3', 'Cn4', 'En4', 'An4', 0.577]
+# 24.186999999999998
+# next
+# ['Cn3', 'Gn3', 'En4', 'Cn5', 1.577]
+# ['Dn3', 'Cn4', 'Fn4', 'Ab4', 3.082]
+# ['Gn3', 'Dn4', 'Gn4', 'Bn4', 1.0]
+# ['An3', 'Cn4', 'En4', 'An4', 0.577]
+# 24.235999999999997
+# next
+# ['Cn3', 'En4', 'Cn5', 'Gn5', 3.646]
+# ['Dn3', 'Cn4', 'Ab4', 'Fn5', 1.577]
+# ['Gn3', 'Dn4', 'Bn4', 'Gn5', 0.577]
+# ['An3', 'Cn4', 'An4', 'En5', 1.528]
+# 24.327999999999996
+# next
+# ['Cn4', 'Gn4', 'Cn5', 'En5', 1.0]
+# ['Dn4', 'Fn4', 'Cn5', 'Ab5', 3.528]
+# ['Gn3', 'Dn4', 'Bn4', 'Gn5', 0.577]
+# ['An3', 'Cn4', 'An4', 'En5', 1.528]
+# 24.632999999999996
+# next
+# ['Cn4', 'En4', 'Cn5', 'Gn5', 1.528]
+# ['Dn4', 'Fn4', 'Ab4', 'Cn5', 1.0]
+# ['Gn3', 'Dn4', 'Gn4', 'Bn4', 1.0]
+# ['An3', 'Cn4', 'En4', 'An4', 0.577]
+# 25.104999999999997
+# next
+# ['Cn4', 'Gn4', 'Cn5', 'En5', 1.0]
+# ['Dn4', 'Fn4', 'Ab4', 'Cn5', 1.0]
+# ['Gn3', 'Dn4', 'Bn4', 'Gn5', 0.577]
+# ['An3', 'Cn4', 'An4', 'En5', 1.528]
+# 26.104999999999997
+# next
+# ['Cn3', 'Gn3', 'En4', 'Cn5', 1.577]
+# ['Dn3', 'Cn4', 'Ab4', 'Fn5', 1.577]
+# ['Gn3', 'Dn4', 'Bn4', 'Gn5', 0.577]
+# ['An3', 'Cn4', 'An4', 'En5', 1.528]
+# 26.258999999999993
+# next
+# ['Cn3', 'En4', 'Gn4', 'Cn5', 4.786]
+# ['Dn3', 'Cn4', 'Fn4', 'Ab4', 3.082]
+# ['Gn3', 'Dn4', 'Gn4', 'Bn4', 1.0]
+# ['An3', 'Cn4', 'En4', 'An4', 0.577]
+# 26.445
+# next
+# ['Cn4', 'Gn4', 'Cn5', 'En5', 1.0]
+# ['Dn4', 'Fn4', 'Ab4', 'Cn5', 1.0]
+# ['Gn3', 'Dn4', 'Gn4', 'Bn4', 1.0]
+# ['An3', 'An3', 'En4', 'Cn5', 2.646]
+# 26.646
+# next
