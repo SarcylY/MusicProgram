@@ -1,11 +1,18 @@
-#Takes Pieces, which are lists of note objects, and inputs them into musescore.
-#There are a few unimplemented scenarios which are not accounted for and would therefore result in slight errors(see further comments)
+# Takes Pieces, which are lists of note objects, and inputs them into musescore.
+# There are a few unimplemented scenarios which are not accounted for and would therefore result in slight errors(see further comments)
 
-from pynput.keyboard import Key, Controller #allows python to access keyboard
-import pyautogui as pg # allows python to access mouse
-import time #allows various time based functions
-from Song_List import note
+import time  # allows various time based functions
+
+import pyautogui as pg  # allows python to access mouse
+from pynput.keyboard import Key, Controller  # allows python to access keyboard
+
+from Song_List import Note
+
 keyboard = Controller()
+
+
+# TODO Fix 3 warnings
+
 
 def click_dur(note):
     """
@@ -35,7 +42,7 @@ note params have to be objects
     global musescore_note
     if before_note.name == current_note.name:
         #if it's the same name, no movement
-        musescore_note = note(current_note.name, 'filler', before_note.pitch, "filler")
+        musescore_note = Note(current_note.name, 'filler', before_note.pitch)
         return musescore_note
     else:
         note_list = ['c', 'd', 'e', 'f', 'g', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'a']
@@ -49,9 +56,9 @@ note params have to be objects
         if current_note_list_number - before_note_list_number < 4:
             #movement is Up, figuring out which .pitch it'll end up as
             if 'b' in note_list[before_note_list_number: current_note_list_number]:
-                musescore_note = note(current_note.name, 'filler', before_note.pitch + 1, "filler")
+                musescore_note = Note(current_note.name, 'filler', before_note.pitch + 1)
             else:
-                musescore_note = note(current_note.name, 'filler', before_note.pitch, "filler")
+                musescore_note = Note(current_note.name, 'filler', before_note.pitch)
             return musescore_note
         else:
             #movement is Down, see above
@@ -62,9 +69,9 @@ note params have to be objects
             while before_note.name != note_list[revised_before_note_list_number]:
                 revised_before_note_list_number = revised_before_note_list_number + 1
             if 'c' in note_list[revised_current_note_list_number + 1: revised_before_note_list_number + 1]:
-                musescore_note = note(current_note.name, 'filler', before_note.pitch - 1, "filler")
+                musescore_note = Note(current_note.name, 'filler', before_note.pitch - 1)
             else:
-                musescore_note = note(current_note.name, 'filler', before_note.pitch, "filler")
+                musescore_note = Note(current_note.name, 'filler', before_note.pitch)
             return musescore_note
 
 def first_note_modifier(first_note):
@@ -74,10 +81,10 @@ first_note is an instance of the note object
 once again, will output musescore_note via nm()
     """
     if first_note.name == "c" or "d" or "e":
-        before_note = note(first_note.name, 'filler', 5, 'filler')
+        before_note = Note(first_note.name, 'filler', 5)
         nm(before_note, first_note)
     else:
-        before_note = note(first_note.name,'filler', 4, 'filler')
+        before_note = Note(first_note.name, 'filler', 4)
         nm(before_note, first_note)
 
 def octave_adjusting(octave_difference):
@@ -203,9 +210,3 @@ each specific section is commented off and separated by a small time delay
         time.sleep(0.05)#above: readjusts notes via accidentals
         i = i + 1
 
-from Song_List import twinkle
-from Song_List import mary
-from Song_List import chro
-from Song_List import surp
-from Song_List import etude
-from Song_List import test
