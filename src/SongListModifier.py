@@ -2,8 +2,8 @@ import re
 
 from Music.MusicStructures import Note
 
-_default_song_input_path: str = "./data/SongListData.txt"
-_default_song_output_path: str = "./data/SongListOutput.txt"
+_default_song_input_path: str = "../data/SongListData.txt"
+_default_song_output_path: str = "../data/SongListOutput.txt"
 
 
 def create_song_list_output(input_file: str = _default_song_input_path,
