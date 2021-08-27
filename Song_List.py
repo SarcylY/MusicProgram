@@ -1,4 +1,4 @@
-from Music import Note
+from MusicStructures import Note
 
 twinkle_1 = Note('c', 'n', 4, 1)
 twinkle_2 = Note('c', 'n', 4, 1)
