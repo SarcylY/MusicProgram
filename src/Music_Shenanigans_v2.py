@@ -7,7 +7,7 @@ import time  # allows various time based functions
 import pyautogui as pg  # allows python to access mouse
 from pynput.keyboard import Key, Controller  # allows python to access keyboard
 
-from MusicStructures import Note
+from Music.MusicStructures import Note
 
 keyboard = Controller()
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from enum import Enum
 import statistics as stats
+from enum import Enum
+from typing import Union
 
 
 class MovementDirection(Enum):
@@ -219,7 +220,7 @@ class Chord:
     of how "good" the chord is (in SATB)
     """
 
-    def __init__(self, bass: Note, tenor: Note, alto: Note, soprano: Note, priority: int = 0):
+    def __init__(self, bass: Note, tenor: Note, alto: Union[Note, None], soprano: Union[Note, None], priority: int = 0):
         self.bass = bass
         self.tenor = tenor
         self.alto = alto
@@ -227,7 +228,10 @@ class Chord:
         self.priority = priority
 
     def __copy__(self) -> Chord:
-        return Chord(self.bass.copy(), self.tenor.copy(), self.alto.copy(), self.soprano.copy(), self.priority)
+        return Chord(self.bass.copy(), self.tenor.copy(),
+                     self.alto.copy() if self.alto is not None else None,
+                     self.soprano.copy() if self.soprano is not None else None,
+                     self.priority)
 
     def copy(self):
         return self.__copy__()
