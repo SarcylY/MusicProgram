@@ -17,7 +17,11 @@ def note_names_to_objects(list_of_note_names: list[str]) -> list[Note]:
     """
     list_of_note_objects = []
     for note_name in list_of_note_names:
-        new_note = Note(note_name[0], note_name[1:], None)
+        try:
+            new_note = Note(note_name[0], note_name[1:-1], int(note_name[-1]))
+        except:
+            new_note = Note(note_name[0], note_name[1:], 100)
+
         if new_note.accidental == '':
             new_note.accidental = 'n'
         list_of_note_objects.append(new_note)
