@@ -14,4 +14,4 @@ python3 /path/to/Music_Shenanigans.py
 
 ### Prerequisites
 
-The program requires Python 3.5+, the PyAutoGUI and Pynput module.
+The program requires Python 3.9+, the PyAutoGUI and Pynput module.
