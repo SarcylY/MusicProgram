@@ -104,7 +104,7 @@ def chords_of_scale(root_name: str, root_acci: str, chord_type: str) -> list[lis
     """
     given a scale, finds all the chords (diatonic) built off scale degrees (returns as a list of lists)
     """
-    result_list = chord_scale_namer(ChordOrScale.Scale, root_name, root_acci, chord_type)
+    result_list = chord_scale_namer(ChordOrScale.Scale, root_name, root_acci, chord_type, 7)
     chords_list = []
     i = 0
     while i < 7:
@@ -157,6 +157,8 @@ def find_bass_chord(root_name: str, root_acci: str, fig_bass: FigBass) -> list[s
         scale_needed_pre = "major"
     elif pre_slash(fig_bass.numeral) in ['i', 'iio', 'III', 'iv', 'V', 'VI', 'VII']:
         scale_needed_pre = "nat_minor"
+    else:
+        raise Exception("Invalid chord")
 
     if pre_slash(fig_bass.numeral)[-1] in ["o", "+"]:  # specific instructions for dim and aug chords
         temp_chord = pre_slash(fig_bass.numeral)[0:-1].lower()
