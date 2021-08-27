@@ -2,7 +2,7 @@
 
 import copy
 
-from Music.MusicStructures import *
+from src.Music.MusicStructures import *
 
 
 # enables deepcopying
@@ -277,6 +277,7 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
             bass_chord_plus_doubled.append(bass_chord_plus_doubled[2])
     # ^makes full_chord_name list of name of notes
 
+
     list_of_note_objects = [Note.note_from_string(string) for string in bass_chord]
     all_bass_notes = all_possible_notes(list_of_note_objects, Note('C', 'n', 2), Note('E', 'n', 4))
     all_tenor_notes = all_possible_notes(list_of_note_objects, Note('C', 'n', 3), Note('G', 'n', 4))
@@ -311,7 +312,6 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
         if result:
             filtered_chords.append(cur_chord)
     chord_configs = copy.deepcopy(filtered_chords)
-
     # ^filters based on if the bass and tenor notes are a possible config of the full chord name
 
     filtered_chords = []
@@ -636,11 +636,12 @@ def find_best_progression(root_name: str,
 
 if __name__ == '__main__':
     testfig1 = FigBass("I", "")
-    testfig2 = FigBass("ii", '7')
-    testfig3 = FigBass("V", '')
-    testfig4 = FigBass("vi", '')
+    testfig2 = FigBass("V/ii", '7')
+    testfig3 = FigBass("ii", '')
+    testfig4 = FigBass("V", '')
+    testfig5 = FigBass("vi", "6/4")
 
-    testlist1 = [testfig1, testfig2, testfig3, testfig4]
+    testlist1 = [testfig1, testfig2]
 
     progression = find_best_progression("C", "n", testlist1)
 
@@ -651,3 +652,5 @@ if __name__ == '__main__':
 # TODO: filtering final chord list via specific notes (do it before generation to reduce time)
 # TODO: try and figure out if the sd thing is the best way of checking spread/ how it affects movement between chords
 # TODO: fix 9 warnings
+
+# fixed note_from_string function within class Note

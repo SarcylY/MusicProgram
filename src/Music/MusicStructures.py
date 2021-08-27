@@ -50,7 +50,8 @@ class Note:
 
     @classmethod
     def note_from_string(cls, string: str) -> Note:
-        result = Note(string[0], string[1:], int(string[-1]) if string[-1].isdigit() else 100)
+        result = Note(string[0], string[1:-1] if string[-1].isdigit() else string[1:],
+                      int(string[-1]) if string[-1].isdigit() else 100)
         result.fix_blank_accidental()
         return result
 
