@@ -1,9 +1,11 @@
 # Chord namer/beginning of RCM harmony shenanigans
 
 import copy
-# enables deepcopying
 
-from MusicStructures import *
+from Music.MusicStructures import *
+
+
+# enables deepcopying
 
 # enables stdev
 
@@ -139,8 +141,10 @@ def find_bass_chord(root_name: str, root_acci: str, fig_bass: FigBass) -> list[s
 
         if post_slash(fig_bass.numeral) in ["I", "ii", "iii", "IV", "V", 'vi', 'viio']:
             scale_needed_post = "major"
-        if post_slash(fig_bass.numeral) in ['i', 'iio', 'III', 'iv', 'V', 'VI', 'VII']:
+        elif post_slash(fig_bass.numeral) in ['i', 'iio', 'III', 'iv', 'V', 'VI', 'VII']:
             scale_needed_post = "nat_minor"
+        else:
+            raise Exception("Invalid chord/scale")
 
         scale_to_substitute_post = chord_scale_namer(ChordOrScale.Scale, upd_root_name, upd_root_acci,
                                                      scale_needed_post, 7)
@@ -563,7 +567,7 @@ def find_best_progression(root_name: str,
 
     for fig in list_of_figured_basses:
         bass_chord = find_bass_chord(root_name, root_acci, fig)
-        chord_configs = all_chord_configs(root_name, root_acci, fig, 'root')
+        chord_configs = all_chord_configs(root_name, root_acci, fig, DoubledNote.Root)
         if fig.inversion in ["", "7"]:
             bass_locked_chord_configs = lock_bass(chord_configs, "root", bass_chord)
             print(len(bass_locked_chord_configs))
@@ -576,6 +580,8 @@ def find_best_progression(root_name: str,
         elif fig.inversion == "4/2":
             bass_locked_chord_configs = lock_bass(chord_configs, "seventh", bass_chord)
             print(len(bass_locked_chord_configs))
+        else:
+            raise Exception("Invalid LUL")
 
         for each_chord in bass_locked_chord_configs:
             each_chord.update_priority()

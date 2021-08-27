@@ -1,6 +1,6 @@
 import re
 
-from MusicStructures import Note
+from Music.MusicStructures import Note
 
 _default_song_input_path: str = "./data/SongListData.txt"
 _default_song_output_path: str = "./data/SongListOutput.txt"
