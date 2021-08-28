@@ -277,12 +277,13 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
             bass_chord_plus_doubled.append(bass_chord_plus_doubled[2])
     # ^makes full_chord_name list of name of notes
 
-
     list_of_note_objects = [Note.note_from_string(string) for string in bass_chord]
     all_bass_notes = all_possible_notes(list_of_note_objects, Note('C', 'n', 2), Note('E', 'n', 4))
     all_tenor_notes = all_possible_notes(list_of_note_objects, Note('C', 'n', 3), Note('G', 'n', 4))
     all_alto_notes = all_possible_notes(list_of_note_objects, Note('G', 'n', 3), Note('D', 'n', 5))
     all_soprano_notes = all_possible_notes(list_of_note_objects, Note('G', 'n', 4), Note('C', 'n', 6))
+
+    all_notes = [note if note[0] != note[-1] else note + "n" for note in bass_chord_plus_doubled]
 
     chord_configs = []
     for bass_note in all_bass_notes:
@@ -301,14 +302,9 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        note_list = [cur_chord.bass.name, cur_chord.tenor.name]
-        all_notes = copy.deepcopy(bass_chord_plus_doubled)
-        i = 0
-        bass_all_notes = []
-        while i < len(all_notes):
-            bass_all_notes.append(all_notes[i][0])
-            i += 1
-        result = set(bass_all_notes).issubset(note_list)
+        note_list = [cur_chord.bass.name + cur_chord.bass.accidental,
+                     cur_chord.tenor.name + cur_chord.tenor.accidental]
+        result = set(mark_duplicate(note_list)).issubset(mark_duplicate(all_notes))
         if result:
             filtered_chords.append(cur_chord)
     chord_configs = copy.deepcopy(filtered_chords)
@@ -332,14 +328,10 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        note_list = [cur_chord.bass.name, cur_chord.tenor.name, cur_chord.alto.name]
-        all_notes = copy.deepcopy(bass_chord_plus_doubled)
-        i = 0
-        bass_all_notes = []
-        while i < len(all_notes):
-            bass_all_notes.append(all_notes[i][0])
-            i += 1
-        result = set(bass_all_notes).issubset(note_list)
+        note_list = [cur_chord.bass.name + cur_chord.bass.accidental,
+                     cur_chord.tenor.name + cur_chord.tenor.accidental,
+                     cur_chord.alto.name + cur_chord.alto.accidental]
+        result = set(mark_duplicate(note_list)).issubset(mark_duplicate(all_notes))
         if result:
             filtered_chords.append(cur_chord)
     chord_configs = copy.deepcopy(filtered_chords)
@@ -371,14 +363,11 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        note_list = [cur_chord.bass.name, cur_chord.tenor.name, cur_chord.alto.name, cur_chord.soprano.name]
-        all_notes = copy.deepcopy(bass_chord_plus_doubled)
-        i = 0
-        bass_all_notes = []
-        while i < len(all_notes):
-            bass_all_notes.append(all_notes[i][0])
-            i += 1
-        result = set(bass_all_notes).issubset(note_list)
+        note_list = [cur_chord.bass.name + cur_chord.bass.accidental,
+                     cur_chord.tenor.name + cur_chord.tenor.accidental,
+                     cur_chord.alto.name + cur_chord.alto.accidental,
+                     cur_chord.soprano.name + cur_chord.soprano.accidental]
+        result = set(mark_duplicate(note_list)).issubset(mark_duplicate(all_notes))
         if result:
             filtered_chords.append(cur_chord)
     chord_configs = copy.deepcopy(filtered_chords)
@@ -401,6 +390,17 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
     print("final number of chords: " + str(len(chord_configs)))
     # ^filters on soprano being >= alto
     return chord_configs
+
+
+def mark_duplicate(note_list: list[str]) -> list[str]:
+    """
+    marks a duplicate value in a list of notes (written as strings) by appending a "d"
+    """
+    for note in note_list:
+        if note_list.count(note) != 1:
+            note_list[(len(note_list) - 1) - list(reversed(note_list)).index(note)] = \
+                note_list[(len(note_list) - 1) - list(reversed(note_list)).index(note)] + "d"
+    return note_list
 
 
 def lock_bass(chord_configurations: list[Chord], lock: str, bass_chord: list[str]) -> list[Chord]:
@@ -645,6 +645,7 @@ if __name__ == '__main__':
 
     progression = find_best_progression("C", "n", testlist1)
 
+
 # TODO: implementation of secondary doms
 # TODO: implementation of doubling rules
 # TODO: implementation of open/direct 5ths and 8ths
@@ -653,4 +654,4 @@ if __name__ == '__main__':
 # TODO: try and figure out if the sd thing is the best way of checking spread/ how it affects movement between chords
 # TODO: fix 9 warnings
 
-# fixed note_from_string function within class Note
+# fixed issubset shenanigans with extra function mark_duplicate
