@@ -497,34 +497,26 @@ def find_progression_priority(first_chord: Chord, second_chord: Chord) -> int:
     distance each voice moves from first_chord to second_chord). The smaller the progression_prio, the better the
     movement (in theory)
     """
-    voice_list = ["bass", "tenor", "alto", "soprano"]
 
-    bass_movement = 0
-    tenor_movement = 0
-    alto_movement = 0
-    soprano_movement = 0
+    if note_movement(first_chord.bass, second_chord.bass) == MovementDirection.Up:
+        bass_movement = get_bass_interval(first_chord.bass, second_chord.bass)
+    else:
+        bass_movement = get_bass_interval(second_chord.bass, first_chord.bass)
 
-    i = 0
-    while i < 4:
-        locals()['bass_movement'] = 0
-        locals()['tenor_movement'] = 0
-        locals()['alto_movement'] = 0
-        locals()['soprano_movement'] = 0
-        local_dict = copy.deepcopy(locals())
+    if note_movement(first_chord.tenor, second_chord.tenor) == MovementDirection.Up:
+        tenor_movement = get_bass_interval(first_chord.tenor, second_chord.tenor)
+    else:
+        tenor_movement = get_bass_interval(second_chord.tenor, first_chord.tenor)
 
-        program = "if note_movement(first_chord." + voice_list[i] + ", second_chord." + voice_list[i] + ") == 'Up':" + \
-                  "\n\t" + voice_list[i] + "_movement = bass_interval(first_chord." + voice_list[i] \
-                  + ", second_chord." + voice_list[i] + ")" + "\nelse:" + \
-                  "\n\t" + voice_list[i] + "_movement = bass_interval(second_chord." + voice_list[i] \
-                  + ", first_chord." + voice_list[i] + ")"
+    if note_movement(first_chord.alto, second_chord.alto) == MovementDirection.Up:
+        alto_movement = get_bass_interval(first_chord.alto, second_chord.alto)
+    else:
+        alto_movement = get_bass_interval(second_chord.alto, first_chord.alto)
 
-        exec(program, globals(), local_dict)
-
-        bass_movement = local_dict['bass_movement']
-        tenor_movement = local_dict['tenor_movement']
-        alto_movement = local_dict['alto_movement']
-        soprano_movement = local_dict['soprano_movement']
-        i += 1
+    if note_movement(first_chord.soprano, second_chord.soprano) == MovementDirection.Up:
+        soprano_movement = get_bass_interval(first_chord.soprano, second_chord.soprano)
+    else:
+        soprano_movement = get_bass_interval(second_chord.soprano, first_chord.soprano)
 
     progression_prio = bass_movement + tenor_movement + alto_movement + soprano_movement - 4
     return progression_prio
@@ -654,4 +646,4 @@ if __name__ == '__main__':
 # TODO: try and figure out if the sd thing is the best way of checking spread/ how it affects movement between chords
 # TODO: fix 9 warnings
 
-# fixed issubset shenanigans with extra function mark_duplicate
+# fixed second exec() instance in find_progression_priority
