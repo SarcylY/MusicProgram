@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import statistics as stats
+#enables sd
 from enum import Enum
 from typing import Union
 
@@ -22,37 +23,48 @@ class ChordOrScale(Enum):
     Scale = 1
 
 
+class Accidental(Enum):
+    DoubleSharp = "x"
+    Sharp = "#"
+    Natural = "n"
+    Flat = "b"
+    DoubleFlat = "bb"
+
+
 class Note:
-    def __init__(self, name: str, accidental: str, pitch: int, dur: float = 1):
+    def __init__(self, name: str, accidental: Accidental, pitch: int, dur: float = 1):
         self.name = name
         self.accidental = accidental
         self.pitch = pitch
         self.dur: float = dur
 
     def __str__(self):
-        return self.name + "," + self.accidental + "," + str(self.pitch) + "," + str(self.dur)
+        return self.name + "," + str(self.accidental.value) + "," + str(self.pitch) + "," + str(self.dur)
 
     def __repr__(self):
-        return self.name + "," + self.accidental + "," + str(self.pitch) + "," + str(self.dur)
+        return self.name + "," + str(self.accidental.value) + "," + str(self.pitch) + "," + str(self.dur)
 
     def __copy__(self):
         return self.copy()
 
     def fix_blank_accidental(self) -> None:
-        if self.accidental == '':
-            self.accidental = 'n'
+        if self.accidental.value == '':
+            self.accidental = Accidental.Natural
 
     def get_readable_version(self) -> str:
-        return self.name + self.accidental + str(self.pitch)
+        return self.name + str(self.accidental.value) + str(self.pitch)
 
     def copy(self) -> Note:
-        return Note(self.name, self.accidental, self.pitch, self.dur)
+        return Note(self.name, self.accidental.value, self.pitch, self.dur)
 
     @classmethod
     def note_from_string(cls, string: str) -> Note:
-        result = Note(string[0], string[1:-1] if string[-1].isdigit() else string[1:],
+        result = Note(string[0],
+                      Accidental.Natural if string[1:-1] == "" and string[-1].isdigit()
+                      else Accidental.Natural if string[1:] == "" and not string[-1].isdigit()
+                      else Accidental(string[1:-1]) if string[-1].isdigit()
+                      else Accidental(string[1:]),
                       int(string[-1]) if string[-1].isdigit() else 100)
-        result.fix_blank_accidental()
         return result
 
 
@@ -72,16 +84,18 @@ def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
     full_list = ['C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B',
                  'C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B']
     lower_number_in_full = full_list.index(lower_note.name)
-    if lower_note.accidental == "bb":
+    if lower_note.accidental == Accidental.DoubleFlat:
         true_lower_number = lower_number_in_full - 2
-    elif lower_note.accidental == "b":
+    elif lower_note.accidental == Accidental.Flat:
         true_lower_number = lower_number_in_full - 1
-    elif lower_note.accidental == "n":
+    elif lower_note.accidental == Accidental.Natural:
         true_lower_number = lower_number_in_full
-    elif lower_note.accidental == "#":
+    elif lower_note.accidental == Accidental.Sharp:
         true_lower_number = lower_number_in_full + 1
-    elif lower_note.accidental == "x":
+    elif lower_note.accidental == Accidental.DoubleSharp:
         true_lower_number = lower_number_in_full + 2
+    else:
+        raise Exception("Invalid accidental")
     # ^finds the true lower number value based on name and accidental (can go all the way down to -2)
 
     if true_lower_number in [-1, -2]:
@@ -91,16 +105,18 @@ def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
         upper_number_in_full = updated_full_list.index(upper_note.name)
     # ^modifies the full_list based on the true lower number
 
-    if upper_note.accidental == "bb":
+    if upper_note.accidental == Accidental.DoubleFlat:
         true_upper_number = upper_number_in_full - 2
-    elif upper_note.accidental == "b":
+    elif upper_note.accidental == Accidental.Flat:
         true_upper_number = upper_number_in_full - 1
-    elif upper_note.accidental == "n":
+    elif upper_note.accidental == Accidental.Natural:
         true_upper_number = upper_number_in_full
-    elif upper_note.accidental == "#":
+    elif upper_note.accidental == Accidental.Sharp:
         true_upper_number = upper_number_in_full + 1
-    elif upper_note.accidental == "x":
+    elif upper_note.accidental == Accidental.DoubleSharp:
         true_upper_number = upper_number_in_full + 2
+    else:
+        raise Exception("Invalid accidental")
     if true_lower_number in [-1, -2]:
         true_diff = true_upper_number - true_lower_number
     else:
@@ -121,6 +137,8 @@ def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
         expected_diff = 9
     elif bass_interval % 7 == 0:
         expected_diff = 11
+    else:
+        raise Exception("Should never reach this point - check precise_interval_calc")
     # ^sets the expected semitone difference for the major/perfect versions of the intervals
 
     if true_diff - expected_diff == -2:
@@ -165,23 +183,23 @@ def note_movement(first_note: Note, second_note: Note) -> MovementDirection:
         return MovementDirection.Up
     if first_note_number > second_note_number:
         return MovementDirection.Down
-    if first_note.accidental == 'bb':
+    if first_note.accidental == Accidental.DoubleFlat:
         first_acci = -2
-    elif first_note.accidental == 'b':
+    elif first_note.accidental == Accidental.Flat:
         first_acci = -1
-    elif first_note.accidental == '#':
+    elif first_note.accidental == Accidental.Sharp:
         first_acci = 1
-    elif first_note.accidental == 'x':
+    elif first_note.accidental == Accidental.DoubleSharp:
         first_acci = 2
     else:
         first_acci = 0
-    if second_note.accidental == 'bb':
+    if second_note.accidental == Accidental.DoubleFlat:
         second_acci = -2
-    elif second_note.accidental == 'b':
+    elif second_note.accidental == Accidental.Flat:
         second_acci = -1
-    elif second_note.accidental == '#':
+    elif second_note.accidental == Accidental.Sharp:
         second_acci = 1
-    elif second_note.accidental == 'x':
+    elif second_note.accidental == Accidental.DoubleSharp:
         second_acci = 2
     else:
         second_acci = 0
@@ -240,15 +258,15 @@ class Chord:
     def update_priority(self) -> None:
         """
         increases the priority count of the given chord based on the soft caps for the ranges in the bass and soprano
-        also now includes calculation of how evenly spread the notes are in the chord, the more even they are, the better
-        the chord (adds a simple sd of all the intervals)
+        also now includes calculation of how evenly spread the notes are in the chord, the more even they are, the
+        better the chord (adds a simple sd of all the intervals)
         Returns the same chord, now with their .priority updated
         The lower the priority, the better the chord (the more soft caps it violates)
         """
         self.priority = 0
 
-        bass_lower_bound = Note("F", 'n', 3)
-        bass_upper_bound = Note('C', 'n', 4)
+        bass_lower_bound = Note("F", Accidental.Natural, 3)
+        bass_upper_bound = Note('C', Accidental.Natural, 4)
         lower_result = note_movement(bass_lower_bound, self.bass)
         upper_result = note_movement(bass_upper_bound, self.bass)
         if lower_result == MovementDirection.Down:
@@ -257,8 +275,8 @@ class Chord:
             self.priority += 1
         # ^lowers priority based on soft caps in the bass
 
-        soprano_lower_bound = Note("C", 'n', 4)
-        soprano_upper_bound = Note('G', 'n', 5)
+        soprano_lower_bound = Note("C", Accidental.Natural, 4)
+        soprano_upper_bound = Note('G', Accidental.Natural, 5)
         lower_result = note_movement(soprano_lower_bound, self.soprano)
         upper_result = note_movement(soprano_upper_bound, self.soprano)
         if lower_result == MovementDirection.Down:

@@ -1,18 +1,16 @@
 # Chord namer/beginning of RCM harmony shenanigans
 
 import copy
-
+# enables deepcopying
 from src.Music.MusicStructures import *
 
-
-# enables deepcopying
-
-# enables stdev
+ALL_chord_configs = []
+# defining global variables
 
 
 def chord_scale_namer(chord_or_scale: ChordOrScale,
                       root_name: str,
-                      root_acci: str,
+                      root_acci: Accidental,
                       chord_type: str,
                       num_notes: int) -> list[str]:
     """
@@ -37,13 +35,13 @@ def chord_scale_namer(chord_or_scale: ChordOrScale,
     # ^figures out the names of the "root notes" (aka bass notes) (eg. A C E G) based on primitive white key only list
     full_list = ['C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B']
     real_root_number = full_list.index(root_name)
-    if root_acci == '#':
+    if root_acci == Accidental.Sharp:
         real_root_number += 1
-    elif root_acci == 'x':
+    elif root_acci == Accidental.DoubleSharp:
         real_root_number += 2
-    elif root_acci == 'b':
+    elif root_acci == Accidental.Flat:
         real_root_number -= 1
-    elif root_acci == 'bb':
+    elif root_acci == Accidental.DoubleFlat:
         real_root_number -= 2
     if real_root_number < 0 or real_root_number > 11:
         real_root_number = (real_root_number + 12) % 12
@@ -102,7 +100,7 @@ def chord_scale_namer(chord_or_scale: ChordOrScale,
     return result_list
 
 
-def chords_of_scale(root_name: str, root_acci: str, chord_type: str) -> list[list[str]]:
+def chords_of_scale(root_name: str, root_acci: Accidental, chord_type: str) -> list[list[str]]:
     """
     given a scale, finds all the chords (diatonic) built off scale degrees (returns as a list of lists)
     """
@@ -126,7 +124,7 @@ def chords_of_scale(root_name: str, root_acci: str, chord_type: str) -> list[lis
     return chords_list
 
 
-def find_bass_chord(root_name: str, root_acci: str, fig_bass: FigBass) -> list[str]:
+def find_bass_chord(root_name: str, root_acci: Accidental, fig_bass: FigBass) -> list[str]:
     """
     Given a scale (with a root_name, root_acci and type), produces the chord that is used for the SATB chord (using the
     figured bass notation of numeral and inversion)
@@ -134,8 +132,7 @@ def find_bass_chord(root_name: str, root_acci: str, fig_bass: FigBass) -> list[s
     """
     numeral_list = ["i", "ii", "iii", "iv", "v", "vi", "vii"]
 
-    upd_root_name = root_name
-    upd_root_acci = root_acci
+    upd_root_note = Note(root_name, root_acci, 100)
 
     if post_slash(fig_bass.numeral) != fig_bass.numeral:
 
@@ -144,17 +141,16 @@ def find_bass_chord(root_name: str, root_acci: str, fig_bass: FigBass) -> list[s
         elif post_slash(fig_bass.numeral) in ['i', 'iio', 'III', 'iv', 'V', 'VI', 'VII']:
             scale_needed_post = "nat_minor"
         else:
-            raise Exception("Invalid chord/scale")
+            raise Exception("Invalid chord in secondary dominant")
 
-        scale_to_substitute_post = chord_scale_namer(ChordOrScale.Scale, upd_root_name, upd_root_acci,
+        scale_to_substitute_post = chord_scale_namer(ChordOrScale.Scale, upd_root_note.name, upd_root_note.accidental,
                                                      scale_needed_post, 7)
         scale_degree_minus_one_post = numeral_list.index(post_slash(fig_bass.numeral).lower())
 
-        upd_root_name = scale_to_substitute_post[scale_degree_minus_one_post][0]
-        upd_root_acci = scale_to_substitute_post[scale_degree_minus_one_post][1:]
+        upd_root_note = scale_to_substitute_post[scale_degree_minus_one_post][0] + \
+            scale_to_substitute_post[scale_degree_minus_one_post][1:]
+        upd_root_note = Note.note_from_string(upd_root_note)
 
-        if upd_root_acci == "":
-            upd_root_acci = "n"
     # ^adjusts by secondary (dominant) if necessary
 
     if pre_slash(fig_bass.numeral) in ["I", "ii", "iii", "IV", "V", 'vi', 'viio']:
@@ -169,38 +165,38 @@ def find_bass_chord(root_name: str, root_acci: str, fig_bass: FigBass) -> list[s
     else:
         temp_chord = pre_slash(fig_bass.numeral).lower()
 
-    scale_to_substitute_pre = chord_scale_namer(ChordOrScale.Scale, upd_root_name, upd_root_acci, scale_needed_pre, 7)
+    scale_to_substitute_pre = chord_scale_namer(ChordOrScale.Scale, upd_root_note.name,
+                                                upd_root_note.accidental, scale_needed_pre, 7)
 
     scale_degree_minus_one_pre = numeral_list.index(temp_chord)
 
-    upd_root_name = scale_to_substitute_pre[scale_degree_minus_one_pre][0]
-    upd_root_acci = scale_to_substitute_pre[scale_degree_minus_one_pre][1:]
-
-    if upd_root_acci == "":
-        upd_root_acci = "n"
+    upd_root_note = scale_to_substitute_pre[scale_degree_minus_one_pre][0] + \
+        scale_to_substitute_pre[scale_degree_minus_one_pre][1:]
+    upd_root_note = Note.note_from_string(upd_root_note)
 
     if fig_bass.inversion in ["", "6", "6/4"]:
         if pre_slash(fig_bass.numeral) in ["I", "II", "III", "IV", "V", "VI", "VII"]:
-            return chord_scale_namer(ChordOrScale.Chord, upd_root_name, upd_root_acci, "maj", 3)
+            return chord_scale_namer(ChordOrScale.Chord, upd_root_note.name, upd_root_note.accidental, "maj", 3)
         elif pre_slash(fig_bass.numeral) in ["i", "ii", "iii", "iv", "v", "vi", "vii"]:
-            return chord_scale_namer(ChordOrScale.Chord, upd_root_name, upd_root_acci, "min", 3)
+            return chord_scale_namer(ChordOrScale.Chord, upd_root_note.name, upd_root_note.accidental, "min", 3)
         elif pre_slash(fig_bass.numeral) in ["I+", "II+", "III+", "IV+", "V+", "VI+", "VII+"]:
-            return chord_scale_namer(ChordOrScale.Chord, upd_root_name, upd_root_acci, "aug", 3)
+            return chord_scale_namer(ChordOrScale.Chord, upd_root_note.name, upd_root_note.accidental, "aug", 3)
         elif pre_slash(fig_bass.numeral) in ["io", "iio", "iiio", "ivo", "vo", "vio", "viio"]:
-            return chord_scale_namer(ChordOrScale.Chord, upd_root_name, upd_root_acci, "dim", 3)
+            return chord_scale_namer(ChordOrScale.Chord, upd_root_note.name, upd_root_note.accidental, "dim", 3)
 
     elif fig_bass.inversion in ["7", "6/5", "4/3", "4/2"]:
         if pre_slash(fig_bass.numeral) in ["I", "III", "IV", "VI"]:  # maj7
-            return chord_scale_namer(ChordOrScale.Chord, upd_root_name, upd_root_acci, "maj7", 4)
+            return chord_scale_namer(ChordOrScale.Chord, upd_root_note.name, upd_root_note.accidental, "maj7", 4)
         elif pre_slash(fig_bass.numeral) in ["V"]:  # dom7
-            return chord_scale_namer(ChordOrScale.Chord, upd_root_name, upd_root_acci, "dom7", 4)
+            return chord_scale_namer(ChordOrScale.Chord, upd_root_note.name, upd_root_note.accidental, "dom7", 4)
         elif pre_slash(fig_bass.numeral) in ["i", "ii", "iii", "iv", "v", "vi"]:  # min7
-            return chord_scale_namer(ChordOrScale.Chord, upd_root_name, upd_root_acci, "half_dim7", 4)
+            return chord_scale_namer(ChordOrScale.Chord, upd_root_note.name, upd_root_note.accidental, "half_dim7", 4)
         elif pre_slash(fig_bass.numeral) == "vii0":  # half-dim
-            return chord_scale_namer(ChordOrScale.Chord, upd_root_name, upd_root_acci, "half_dim7", 4)
+            return chord_scale_namer(ChordOrScale.Chord, upd_root_note.name, upd_root_note.accidental, "half_dim7", 4)
         elif pre_slash(fig_bass.numeral) in ["iio", "viio"]:  # dim7
-            return chord_scale_namer(ChordOrScale.Chord, upd_root_name, upd_root_acci, "dim7", 4)
-    raise RuntimeError("Should never be reached")
+            return chord_scale_namer(ChordOrScale.Chord, upd_root_note.name, upd_root_note.accidental, "dim7", 4)
+
+    raise RuntimeError("Inversion Error")
 
 
 def pre_slash(string: str) -> str:
@@ -213,7 +209,7 @@ def pre_slash(string: str) -> str:
     return temp_array[0]
 
 
-def post_slash(string):
+def post_slash(string: str) -> str:
     """
     Returns a string that comes after the slash in the given string; returns the original string if there is no slash
     """
@@ -223,21 +219,9 @@ def post_slash(string):
     return temp_array[1]
 
 
-def interval_calc(lower_note: Note, upper_note: Note) -> int:
-    """
-    given a lower note object and an upper note object, returns the bass interval (no major, minor etc)
-    of the two notes (includes extensions above an octave)
-    """
-    root_list = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
-    lower_number = root_list.index(lower_note.name)
-    upper_number = root_list.index(upper_note.name)
-    interval = (upper_number - lower_number) + 1
-    octave_diff = upper_note.pitch - lower_note.pitch
-    interval = interval + (octave_diff * 7)
-    return interval
-
-
-def all_possible_notes(list_of_note_objects: list[Note], lower_bound_note: Note, upper_bound_note: Note) -> list[Note]:
+def all_possible_notes(list_of_note_objects: list[Note],
+                       lower_bound_note: Note,
+                       upper_bound_note: Note) -> list[Note]:
     """
     given a list of note objects, a lower bound note object and an upper bound note object (inclusive), determines
     all possible notes with the same note names from the ones in the list that can exist in the given bracket
@@ -263,7 +247,10 @@ def all_possible_notes(list_of_note_objects: list[Note], lower_bound_note: Note,
     # ^filters out by upper and lower bound
 
 
-def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled_note: DoubledNote) -> list[Chord]:
+def all_chord_configs(root_name: str,
+                      root_acci: Accidental,
+                      fig_bass: FigBass,
+                      doubled_note: DoubledNote) -> list[Chord]:
     """
     """
     bass_chord = find_bass_chord(root_name, root_acci, fig_bass)
@@ -278,10 +265,14 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
     # ^makes full_chord_name list of name of notes
 
     list_of_note_objects = [Note.note_from_string(string) for string in bass_chord]
-    all_bass_notes = all_possible_notes(list_of_note_objects, Note('C', 'n', 2), Note('E', 'n', 4))
-    all_tenor_notes = all_possible_notes(list_of_note_objects, Note('C', 'n', 3), Note('G', 'n', 4))
-    all_alto_notes = all_possible_notes(list_of_note_objects, Note('G', 'n', 3), Note('D', 'n', 5))
-    all_soprano_notes = all_possible_notes(list_of_note_objects, Note('G', 'n', 4), Note('C', 'n', 6))
+    all_bass_notes = all_possible_notes(list_of_note_objects, Note('C', Accidental.Natural, 2),
+                                        Note('E', Accidental.Natural, 4))
+    all_tenor_notes = all_possible_notes(list_of_note_objects, Note('C', Accidental.Natural, 3),
+                                         Note('G', Accidental.Natural, 4))
+    all_alto_notes = all_possible_notes(list_of_note_objects, Note('G', Accidental.Natural, 3),
+                                        Note('D', Accidental.Natural, 5))
+    all_soprano_notes = all_possible_notes(list_of_note_objects, Note('G', Accidental.Natural, 4),
+                                           Note('C', Accidental.Natural, 6))
 
     all_notes = [note if note[0] != note[-1] else note + "n" for note in bass_chord_plus_doubled]
 
@@ -302,8 +293,8 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        note_list = [cur_chord.bass.name + cur_chord.bass.accidental,
-                     cur_chord.tenor.name + cur_chord.tenor.accidental]
+        note_list = [cur_chord.bass.name + cur_chord.bass.accidental.value,
+                     cur_chord.tenor.name + cur_chord.tenor.accidental.value]
         result = set(mark_duplicate(note_list)).issubset(mark_duplicate(all_notes))
         if result:
             filtered_chords.append(cur_chord)
@@ -328,9 +319,9 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        note_list = [cur_chord.bass.name + cur_chord.bass.accidental,
-                     cur_chord.tenor.name + cur_chord.tenor.accidental,
-                     cur_chord.alto.name + cur_chord.alto.accidental]
+        note_list = [cur_chord.bass.name + cur_chord.bass.accidental.value,
+                     cur_chord.tenor.name + cur_chord.tenor.accidental.value,
+                     cur_chord.alto.name + cur_chord.alto.accidental.value]
         result = set(mark_duplicate(note_list)).issubset(mark_duplicate(all_notes))
         if result:
             filtered_chords.append(cur_chord)
@@ -363,11 +354,20 @@ def all_chord_configs(root_name: str, root_acci: str, fig_bass: FigBass, doubled
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        note_list = [cur_chord.bass.name + cur_chord.bass.accidental,
-                     cur_chord.tenor.name + cur_chord.tenor.accidental,
-                     cur_chord.alto.name + cur_chord.alto.accidental,
-                     cur_chord.soprano.name + cur_chord.soprano.accidental]
+
+        # print(cur_chord.bass)
+        # print(cur_chord.tenor)
+        # print(cur_chord.alto)
+        # print(cur_chord.soprano)
+
+        note_list = [cur_chord.bass.name + cur_chord.bass.accidental.value,
+                     cur_chord.tenor.name + cur_chord.tenor.accidental.value,
+                     cur_chord.alto.name + cur_chord.alto.accidental.value,
+                     cur_chord.soprano.name + cur_chord.soprano.accidental.value]
         result = set(mark_duplicate(note_list)).issubset(mark_duplicate(all_notes))
+
+        # print(result)
+
         if result:
             filtered_chords.append(cur_chord)
     chord_configs = copy.deepcopy(filtered_chords)
@@ -412,32 +412,32 @@ def lock_bass(chord_configurations: list[Chord], lock: str, bass_chord: list[str
     filtered_chords = []
     for each_chord in chord_configurations:
         if lock == "root":
-            if each_chord.bass.accidental == "n":
+            if each_chord.bass.accidental == Accidental.Natural:
                 if each_chord.bass.name == bass_chord[0]:
                     filtered_chords.append(each_chord)
             else:
-                if each_chord.bass.name + each_chord.bass.accidental == bass_chord[0]:
+                if each_chord.bass.name + each_chord.bass.accidental.value == bass_chord[0]:
                     filtered_chords.append(each_chord)
         elif lock == "third":
-            if each_chord.bass.accidental == "n":
+            if each_chord.bass.accidental == Accidental.Natural:
                 if each_chord.bass.name == bass_chord[1]:
                     filtered_chords.append(each_chord)
             else:
-                if each_chord.bass.name + each_chord.bass.accidental == bass_chord[1]:
+                if each_chord.bass.name + each_chord.bass.accidental.value == bass_chord[1]:
                     filtered_chords.append(each_chord)
         elif lock == "fifth":
-            if each_chord.bass.accidental == "n":
+            if each_chord.bass.accidental == Accidental.Natural:
                 if each_chord.bass.name == bass_chord[2]:
                     filtered_chords.append(each_chord)
             else:
-                if each_chord.bass.name + each_chord.bass.accidental == bass_chord[2]:
+                if each_chord.bass.name + each_chord.bass.accidental.value == bass_chord[2]:
                     filtered_chords.append(each_chord)
         elif lock == "seventh":
-            if each_chord.bass.accidental == "n":
+            if each_chord.bass.accidental == Accidental.Natural:
                 if each_chord.bass.name == bass_chord[3]:
                     filtered_chords.append(each_chord)
             else:
-                if each_chord.bass.name + each_chord.bass.accidental == bass_chord[3]:
+                if each_chord.bass.name + each_chord.bass.accidental.value == bass_chord[3]:
                     filtered_chords.append(each_chord)
 
     return filtered_chords
@@ -546,7 +546,7 @@ def full_progression_prio(chord_list: list[int]) -> int:
 
 
 def find_best_progression(root_name: str,
-                          root_acci: str,
+                          root_acci: Accidental,
                           list_of_figured_basses: list[FigBass]) -> (list[list[list[int]]], list[list[Chord]]):
     """
     takes in a list of fig_bass objects, along with a root_name and root_acci, and outputs the "best" chord progression
@@ -573,7 +573,7 @@ def find_best_progression(root_name: str,
             bass_locked_chord_configs = lock_bass(chord_configs, "seventh", bass_chord)
             print(len(bass_locked_chord_configs))
         else:
-            raise Exception("Invalid LUL")
+            raise Exception("Invalid inversion")
 
         for each_chord in bass_locked_chord_configs:
             each_chord.update_priority()
@@ -633,10 +633,9 @@ if __name__ == '__main__':
     testfig4 = FigBass("V", '')
     testfig5 = FigBass("vi", "6/4")
 
-    testlist1 = [testfig1, testfig2]
+    testlist1 = [testfig1, testfig2, testfig3, testfig4, testfig5]
 
-    progression = find_best_progression("C", "n", testlist1)
-
+    progression = find_best_progression("C", Accidental.Natural, testlist1)
 
 # TODO: implementation of secondary doms
 # TODO: implementation of doubling rules
@@ -646,4 +645,5 @@ if __name__ == '__main__':
 # TODO: try and figure out if the sd thing is the best way of checking spread/ how it affects movement between chords
 # TODO: fix 9 warnings
 
-# fixed second exec() instance in find_progression_priority
+# removed interval_calc
+# implemented Accidental enum
