@@ -120,7 +120,7 @@ def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
     if true_lower_number in [-1, -2]:
         true_diff = true_upper_number - true_lower_number
     else:
-        true_diff = true_upper_number
+        true_diff = true_upper_number % 12
     # ^calculates the actual difference between lower and upper note (in units of semitones)
 
     if bass_interval % 7 == 1:
@@ -140,7 +140,7 @@ def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
     else:
         raise Exception("Should never reach this point - check precise_interval_calc")
     # ^sets the expected semitone difference for the major/perfect versions of the intervals
-
+    
     if true_diff - expected_diff == -2:
         quality = "d"
     elif true_diff - expected_diff == -1:
@@ -156,7 +156,7 @@ def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
     elif true_diff - expected_diff == 1:
         quality = "a"
     else:
-        return "i"
+        raise Exception("Should never reach this point - can't find quality in precise_interval_calc")
     # ^based on the differences of the true and expected semitone differences, gives the bass interval a quality
 
     true_interval = quality + str(bass_interval)

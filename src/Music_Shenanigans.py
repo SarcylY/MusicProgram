@@ -628,14 +628,14 @@ def find_best_progression(root_name: str,
 
 if __name__ == '__main__':
     testfig1 = FigBass("I", "")
-    testfig2 = FigBass("V/ii", '7')
-    testfig3 = FigBass("ii", '')
+    testfig2 = FigBass("IV", '')
+    testfig3 = FigBass("V", '')
     testfig4 = FigBass("V", '')
     testfig5 = FigBass("vi", "6/4")
 
-    testlist1 = [testfig1, testfig2, testfig3, testfig4, testfig5]
+    testlist1 = [testfig1, testfig2, testfig3]
 
-    progression = find_best_progression("C", Accidental.Natural, testlist1)
+    progression = find_best_progression("B", Accidental.Natural, testlist1)
 
 # TODO: implementation of secondary doms
 # TODO: implementation of doubling rules
