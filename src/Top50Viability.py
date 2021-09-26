@@ -41,7 +41,7 @@ def corre(list_of_chord_indices: list[list[list[int]]], corre_from: int) -> floa
         while i < len(list_of_chord_indices[corre_from - 1]):
             future_progression = list_of_chord_indices[corre_from - 1][i]
             if is_future_iteration(progression, future_progression):
-                future_iteration_priority_list.append(full_progression_prio(future_progression))
+                future_iteration_priority_list.append(full_progression_priority(future_progression))
             i = i + 1
     #for every progression of length corre_from, finds the priority of all future iterations and puts them in
     # future_iteration_priority_list

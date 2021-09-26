@@ -4,9 +4,8 @@ import copy
 # enables deepcopying
 from src.Music.MusicStructures import *
 
-ALL_chord_configs = []
 # defining global variables
-
+ALL_chord_configs = []
 
 def chord_scale_namer(chord_or_scale: ChordOrScale,
                       root_name: str,
@@ -124,15 +123,15 @@ def chords_of_scale(root_name: str, root_acci: Accidental, chord_type: str) -> l
     return chords_list
 
 
-def find_bass_chord(root_name: str, root_acci: Accidental, fig_bass: FigBass) -> list[str]:
+def find_bass_chord(root_name: str, root_accidental: Accidental, fig_bass: FigBass) -> list[str]:
     """
-    Given a scale (with a root_name, root_acci and type), produces the chord that is used for the SATB chord (using the
-    figured bass notation of numeral and inversion)
-    7ths still kinda fucked?
+    Given a scale (with a root_name, root_accidental and type), produces the chord that is used for the SATB chord
+    using the figured bass notation of numeral and inversion)
+    TODO: 7ths still kinda fucked?
     """
     numeral_list = ["i", "ii", "iii", "iv", "v", "vi", "vii"]
 
-    upd_root_note = Note(root_name, root_acci, 100)
+    upd_root_note = Note(root_name, root_accidental, 100)
 
     if post_slash(fig_bass.numeral) != fig_bass.numeral:
 
@@ -248,12 +247,12 @@ def all_possible_notes(list_of_note_objects: list[Note],
 
 
 def all_chord_configs(root_name: str,
-                      root_acci: Accidental,
+                      root_accidental: Accidental,
                       fig_bass: FigBass,
                       doubled_note: DoubledNote) -> list[Chord]:
     """
     """
-    bass_chord = find_bass_chord(root_name, root_acci, fig_bass)
+    bass_chord = find_bass_chord(root_name, root_accidental, fig_bass)
     bass_chord_plus_doubled = copy.deepcopy(bass_chord)
     if len(bass_chord) == 3:
         if doubled_note == DoubledNote.Root:
@@ -518,14 +517,14 @@ def find_progression_priority(first_chord: Chord, second_chord: Chord) -> int:
     else:
         soprano_movement = get_bass_interval(second_chord.soprano, first_chord.soprano)
 
-    progression_prio = bass_movement + tenor_movement + alto_movement + soprano_movement - 4
-    return progression_prio
+    progression_priority = bass_movement + tenor_movement + alto_movement + soprano_movement - 4
+    return progression_priority
 
 
-def full_progression_prio(chord_list: list[int]) -> int:
+def full_progression_priority(chord_list: list[int]) -> int:
     """
     gives a priority based on how the entire progression looks
-    includes how nice each chord looks as well through spacing and chord_prios
+    includes how nice each chord looks as well through spacing and chord_priorities
     the lower the priority, the better
     """
     i = 0
@@ -546,10 +545,10 @@ def full_progression_prio(chord_list: list[int]) -> int:
 
 
 def find_best_progression(root_name: str,
-                          root_acci: Accidental,
+                          root_accidental: Accidental,
                           list_of_figured_basses: list[FigBass]) -> (list[list[list[int]]], list[list[Chord]]):
     """
-    takes in a list of fig_bass objects, along with a root_name and root_acci, and outputs the "best" chord progression
+    takes in a list of fig_bass objects, along with a root_name and root_accidental, and outputs the "best" chord progression
     best is deemed through a minimal amount of movement
 
     deal with doubling rules later
@@ -558,8 +557,8 @@ def find_best_progression(root_name: str,
     ALL_chord_configs = []
 
     for fig in list_of_figured_basses:
-        bass_chord = find_bass_chord(root_name, root_acci, fig)
-        chord_configs = all_chord_configs(root_name, root_acci, fig, DoubledNote.Root)
+        bass_chord = find_bass_chord(root_name, root_accidental, fig)
+        chord_configs = all_chord_configs(root_name, root_accidental, fig, DoubledNote.Root)
         if fig.inversion in ["", "7"]:
             bass_locked_chord_configs = lock_bass(chord_configs, "root", bass_chord)
             print(len(bass_locked_chord_configs))
@@ -592,7 +591,7 @@ def find_best_progression(root_name: str,
             if is_valid_progression(ALL_chord_configs[0][x], ALL_chord_configs[1][y])[0]:
                 size_list.append([x, y])
 
-    sorted_size_list = sorted(size_list, key=full_progression_prio)
+    sorted_size_list = sorted(size_list, key=full_progression_priority)
 
     final_list.append(sorted_size_list)
     # ^ sets up the first two chords in their prog_rep
@@ -607,7 +606,7 @@ def find_best_progression(root_name: str,
                                         ALL_chord_configs[chord_number_index][new_prog_rep[-1]])[0]:
                     new_size_list.append(new_prog_rep)
 
-        new_sorted_size_list = sorted(new_size_list, key=full_progression_prio)
+        new_sorted_size_list = sorted(new_size_list, key=full_progression_priority)
 
         final_list.append(new_sorted_size_list)
         chord_number_index = chord_number_index + 1
@@ -619,7 +618,7 @@ def find_best_progression(root_name: str,
         prog = final_list[-1][number_of_progs_outputted]
         for x in range(len(prog)):
             print(ALL_chord_configs[x][prog[x]].get_readable_spread())
-        print(full_progression_prio(prog))
+        print(full_progression_priority(prog))
         print("next")
 
     # print out the top 10 full chord progs
@@ -644,6 +643,3 @@ if __name__ == '__main__':
 # TODO: filtering final chord list via specific notes (do it before generation to reduce time)
 # TODO: try and figure out if the sd thing is the best way of checking spread/ how it affects movement between chords
 # TODO: fix 9 warnings
-
-# removed interval_calc
-# implemented Accidental enum

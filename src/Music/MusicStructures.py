@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import statistics as stats
-#enables sd
+# enables sd
 from enum import Enum
 from typing import Union
 
@@ -24,11 +24,33 @@ class ChordOrScale(Enum):
 
 
 class Accidental(Enum):
-    DoubleSharp = "x"
-    Sharp = "#"
-    Natural = "n"
-    Flat = "b"
-    DoubleFlat = "bb"
+    DoubleSharp = ("x", 2)
+    Sharp = ("#", 1)
+    Natural = ("n", 0)
+    Flat = ("b", -1)
+    DoubleFlat = ("bb", -2)
+
+    def __init__(self, string: str, semitone_offset: int):
+        self.string: str = string
+        self.semitone_offset: int = semitone_offset
+
+    @classmethod
+    def get_accidental(cls, string: str):
+        """
+        Returns an accidental value given a string
+        TODO use switch statement/static dict
+        """
+        if string == "x":
+            return Accidental.DoubleSharp
+        elif string == "#":
+            return Accidental.Sharp
+        elif string == "n":
+            return Accidental.Natural
+        elif string == "b":
+            return Accidental.Flat
+        elif string == "bb":
+            return Accidental.DoubleFlat
+        raise Exception("Invalid string: " + string)
 
 
 class Note:
@@ -83,19 +105,8 @@ def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
 
     full_list = ['C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B',
                  'C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B']
-    lower_number_in_full = full_list.index(lower_note.name)
-    if lower_note.accidental == Accidental.DoubleFlat:
-        true_lower_number = lower_number_in_full - 2
-    elif lower_note.accidental == Accidental.Flat:
-        true_lower_number = lower_number_in_full - 1
-    elif lower_note.accidental == Accidental.Natural:
-        true_lower_number = lower_number_in_full
-    elif lower_note.accidental == Accidental.Sharp:
-        true_lower_number = lower_number_in_full + 1
-    elif lower_note.accidental == Accidental.DoubleSharp:
-        true_lower_number = lower_number_in_full + 2
-    else:
-        raise Exception("Invalid accidental")
+    lower_number_in_full = full_list.index(lower_note.name) + lower_note.accidental.semitone_offset
+    true_lower_number = lower_number_in_full + lower_note.accidental.semitone_offset
     # ^finds the true lower number value based on name and accidental (can go all the way down to -2)
 
     if true_lower_number in [-1, -2]:
@@ -104,19 +115,7 @@ def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
         updated_full_list = full_list[true_lower_number:]
         upper_number_in_full = updated_full_list.index(upper_note.name)
     # ^modifies the full_list based on the true lower number
-
-    if upper_note.accidental == Accidental.DoubleFlat:
-        true_upper_number = upper_number_in_full - 2
-    elif upper_note.accidental == Accidental.Flat:
-        true_upper_number = upper_number_in_full - 1
-    elif upper_note.accidental == Accidental.Natural:
-        true_upper_number = upper_number_in_full
-    elif upper_note.accidental == Accidental.Sharp:
-        true_upper_number = upper_number_in_full + 1
-    elif upper_note.accidental == Accidental.DoubleSharp:
-        true_upper_number = upper_number_in_full + 2
-    else:
-        raise Exception("Invalid accidental")
+    true_upper_number = upper_number_in_full + upper_note.accidental.semitone_offset
     if true_lower_number in [-1, -2]:
         true_diff = true_upper_number - true_lower_number
     else:

@@ -1,15 +1,15 @@
 import re
 
-from Music.MusicStructures import Note
+from Music.MusicStructures import Note, Accidental
 
-_default_song_input_path: str = "../data/SongListData.txt"
-_default_song_output_path: str = "../data/SongListOutput.txt"
+_default_song_input_path: str = "./data/SongListData.txt"
+_default_song_output_path: str = "./data/SongListOutput.txt"
 
 
 def create_song_list_output(input_file: str = _default_song_input_path,
                             output_file: str = _default_song_output_path):
     """
-    Converts the song list data (not copied from Song_List.py into csv
+    Converts the song list data into csv
     """
     file = open(input_file, "r")
     output = open(output_file, "w")
@@ -52,7 +52,10 @@ def parse_song_list_output(output_file: str = _default_song_output_path):
                 continue
             else:
                 print("Warning: line " + line + " has 3rd/4th data non length 1. Attempting to continue.")
-        output_dict[csv_data[0]].append(Note(csv_data[2][0], csv_data[3][0], int(csv_data[4]), float(csv_data[5])))
+        output_dict[csv_data[0]].append(Note(csv_data[2][0],
+                                             Accidental.get_accidental(csv_data[3][0]),
+                                             int(csv_data[4]),
+                                             float(csv_data[5])))
     return output_dict
 
 

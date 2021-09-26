@@ -7,18 +7,20 @@ import time  # allows various time based functions
 import pyautogui as pg  # allows python to access mouse
 from pynput.keyboard import Key, Controller  # allows python to access keyboard
 
-from Music.MusicStructures import Note
+from Music.MusicStructures import Note, Accidental
 
 keyboard = Controller()
+musescore_note: Note = Note('c', Accidental.Natural, 4, 1)
+measure: list[list[int]] = [[]]
 
 
 def click_dur(note: Note) -> None:
     """
-clicks on the area of the musescore page which changes the type of note inputted
-0.5 = eighth
-1 = quarter
-2 = half
-4 = whole
+    clicks on the area of the MuseScore page which changes the type of note inputted
+    0.5 = eighth
+    1 = quarter
+    2 = half
+    4 = whole
     :param note: current note object
     """
     if note.dur == 0.5:
@@ -40,7 +42,8 @@ def note_movement(before_note: Note, current_note: Note) -> Note:
     global musescore_note
     if before_note.name == current_note.name:
         # if it's the same name, no movement
-        musescore_note = Note(current_note.name, 'filler', before_note.pitch)
+        # Note: accidental is a filler
+        musescore_note = Note(current_note.name, Accidental.Natural, before_note.pitch)
         return musescore_note
     else:
         note_list = ['c', 'd', 'e', 'f', 'g', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'a']
@@ -51,12 +54,13 @@ def note_movement(before_note: Note, current_note: Note) -> Note:
         while note_list[current_note_list_number] != current_note.name:
             current_note_list_number = current_note_list_number + 1
         # ^figures out if movement is up or down
+        # Note: accidental is a filler
         if current_note_list_number - before_note_list_number < 4:
             # movement is Up, figuring out which .pitch it'll end up as
             if 'b' in note_list[before_note_list_number: current_note_list_number]:
-                musescore_note = Note(current_note.name, 'filler', before_note.pitch + 1)
+                musescore_note = Note(current_note.name, Accidental.Natural, before_note.pitch + 1)
             else:
-                musescore_note = Note(current_note.name, 'filler', before_note.pitch)
+                musescore_note = Note(current_note.name, Accidental.Natural, before_note.pitch)
             return musescore_note
         else:
             # movement is Down, see above
@@ -66,10 +70,11 @@ def note_movement(before_note: Note, current_note: Note) -> Note:
             revised_before_note_list_number = revised_current_note_list_number + 1
             while before_note.name != note_list[revised_before_note_list_number]:
                 revised_before_note_list_number = revised_before_note_list_number + 1
+            # Note: accidental is a filler
             if 'c' in note_list[revised_current_note_list_number + 1: revised_before_note_list_number + 1]:
-                musescore_note = Note(current_note.name, 'filler', before_note.pitch - 1)
+                musescore_note = Note(current_note.name, Accidental.Natural, before_note.pitch - 1)
             else:
-                musescore_note = Note(current_note.name, 'filler', before_note.pitch)
+                musescore_note = Note(current_note.name, Accidental.Natural, before_note.pitch)
             return musescore_note
 
 
@@ -79,11 +84,12 @@ def first_note_modifier(first_note: Note) -> Note:
     first_note is an instance of the note object
     once again, will output MuseScore_note via nm()
     """
+    # Note: accidental is a filler
     if first_note.name == "c" or "d" or "e":
-        before_note = Note(first_note.name, 'filler', 5)
+        before_note = Note(first_note.name, Accidental.Natural, 5)
         return note_movement(before_note, first_note)
     else:
-        before_note = Note(first_note.name, 'filler', 4)
+        before_note = Note(first_note.name, Accidental.Natural, 4)
         return note_movement(before_note, first_note)
 
 
@@ -160,6 +166,7 @@ def run_piece(piece: list[Note], beats_per_measure: float) -> None:
     :param piece: piece which consists of list of note objects
     :param beats_per_measure: see bpm param for measure_calcs()
     """
+    global measure
     i = 0
     while i < len(piece):
         click_dur(piece[i])
@@ -189,8 +196,8 @@ def run_piece(piece: list[Note], beats_per_measure: float) -> None:
                         piece[measure[measure_number][note_in_measure - 1] - 1].pitch:
                     accidental_list = ['b', 'n', '#']
                     acci_type_before = 0
-                    while piece[measure[measure_number][note_in_measure - 1] - 1].accidental != accidental_list[
-                        acci_type_before]:
+                    while piece[measure[measure_number][note_in_measure - 1] - 1].accidental != \
+                            accidental_list[acci_type_before]:
                         acci_type_before = acci_type_before + 1
                     acci_type_after = 0
                     while piece[i].accidental != accidental_list[acci_type_after]:
