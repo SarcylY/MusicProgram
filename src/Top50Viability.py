@@ -1,98 +1,90 @@
-import copy
-# enables deepcopying
+# enables deep copying
+from copy import deepcopy
 from statistics import *
-#enables simple stats calculations
+
+# enables simple stats calculations
 from scipy import stats as s
-#allows for spearman correlation
+
+# allows for spearman correlation
 from src.Music_Shenanigans import *
-#checking the viability of find_best_progression from here + all classes needed
-ALL_chord_configs = []
-# defining global variables
 
-testfig1 = FigBass("I", "")
-testfig2 = FigBass("IV", '')
-testfig3 = FigBass("V", '')
+_arbitrary_high_value: int = 1000000000
 
-testlist1 = [testfig1, testfig2, testfig3]
 
-test_list_of_chord_indices = find_best_progression("C", Accidental.Sharp, testlist1)[0]
-ALL_chord_configs = find_best_progression("C", Accidental.Sharp, testlist1)[1]
-#set up
+# checking the viability of find_best_progression from here + all classes needed
 
-print("viability check")
 
-def is_future_iteration(shorter_chord_prog: list[int], larger_chord_prog: list[int]) -> bool:
+def is_future_iteration(shorter_chord_progression: list[int], larger_chord_progression: list[int]) -> bool:
     """
-    outputs True if the larger_chord_prog is a future iteration of the shorter_chord_prog
-    (all intergers except the ending ones are the same)
+    outputs True if the larger_chord_progression is a future iteration of the shorter_chord_progression
+    (all integers except the ending ones are the same)
     """
-    assert len(shorter_chord_prog) != 0 and len(larger_chord_prog) != 0, "one of the lists is empty"
-    assert len(larger_chord_prog) > len(shorter_chord_prog), "larger_chord_prog is not longer"
-    return larger_chord_prog[0: len(shorter_chord_prog)] == shorter_chord_prog
+    assert len(shorter_chord_progression) != 0 and len(larger_chord_progression) != 0, "one of the lists is empty"
+    assert len(larger_chord_progression) > len(shorter_chord_progression), "larger_chord_progression is not longer"
+    return larger_chord_progression[0: len(shorter_chord_progression)] == shorter_chord_progression
 
-def corre(list_of_chord_indices: list[list[list[int]]], corre_from: int) -> float:
-    corre1 = range(1, len(list_of_chord_indices[corre_from - 2]) + 1)
-    #makes corre1, sequence of numbers from 1 to the number of progressions of length corre_from
 
-    ave_prio = []
-    for progression in list_of_chord_indices[corre_from - 2]:
-        future_iteration_priority_list = []
-        i = 0
-        while i < len(list_of_chord_indices[corre_from - 1]):
-            future_progression = list_of_chord_indices[corre_from - 1][i]
-            if is_future_iteration(progression, future_progression):
-                future_iteration_priority_list.append(full_progression_prio(future_progression))
-            i = i + 1
-    #for every progression of length corre_from, finds the priority of all future iterations and puts them in
+def correlation(list_of_chord_indices: list[list[list[int]]], correlation_from: int) -> float:
+    # Sequence of numbers from 1 to the number of progressions of length correlation_from
+    sample_one: range = range(1, len(list_of_chord_indices[correlation_from - 2]) + 1)
+
+    average_priority: list[int] = []
+    # for every progression of length correlation_from, finds the priority of all future iterations and puts them in
     # future_iteration_priority_list
-
+    for progression_index in list_of_chord_indices[correlation_from - 2]:
+        future_iteration_priority_list = []
+        for future_progression in list_of_chord_indices[correlation_from - 1]:
+            if is_future_iteration(progression_index, future_progression):
+                future_iteration_priority_list.append(full_progression_priority(future_progression))
+        # Finds the average of the future_iteration_priority_list for the current progression
+        # and puts it into average_priority so the order of which priorities appear in average_priority
+        # is the same order as the already sorted original progressions of length correlation_from
+        # If no elements exist, append arbitrarily large number to deal with ones with 0 matches
+        # since they stop producing valid progressions and cannot be used, thus put at the end
         if len(future_iteration_priority_list) == 0:
-            ave_prio.append(1000000000)
-    #appends arbitrarily large number (a billion) to deal with ones with 0 matches (basically they stop producing valid
-    # progressions and cannot be used, thus would be put at the end.)
+            average_priority.append(_arbitrary_high_value)
         else:
-            ave_prio.append(mean(future_iteration_priority_list))
-    #finds the average of the future_iteration_priority_list for the current progression and puts it into ave_prio
-    # so the order of which prios appear in ave_prio is the same order as the already sorted original progressions of
-    # length corre_from
+            average_priority.append(mean(future_iteration_priority_list))
 
-    # print(ave_prio)
-    #
-    ave_prio_copy = copy.deepcopy(ave_prio)
-    ave_prio_copy = sorted(ave_prio_copy)
-    # print(ave_prio_copy)
+    # print(average_priority)
+    average_priority_copy = sorted(deepcopy(average_priority))
+    # print(average_priority_copy)
 
-    #creates ave_prio_copy and sorts based on how good the progression is
+    # creates average_priority_copy and sorts based on how good the progression is
 
     failed_progression_indices = []
     times_seen = 0
-    i = 0
-    while i < len(ave_prio):
-        if ave_prio[i] == 1000000000:
-            failed_progression_indices.append(ave_prio_copy.index(ave_prio[i]) + 1 + times_seen)
-            times_seen = times_seen + 1
+    for i in range(len(average_priority)):
+        if average_priority[i] == _arbitrary_high_value:
+            failed_progression_indices.append(average_priority_copy.index(average_priority[i]) + 1 + times_seen)
+            times_seen += 1
         else:
-            ave_prio[i] = ave_prio_copy.index(ave_prio[i]) + 1
-        i = i + 1
-    #reassigns ave_prio list based on indices in ave_prio_copy (but makes it stay in the same order to create corre2)
-    # print(ave_prio)
+            average_priority[i] = average_priority_copy.index(average_priority[i]) + 1
+    # reassigns average_priority list based on indices in average_priority_copy
+    # (but makes it stay in the same order to create sample_two)
+    # print(average_priority)
     #
     # print(failed_progression_indices)
 
-    corre2 = []
-    for reassigned_prog in ave_prio:
-        if reassigned_prog == 1000000000:
-            corre2.append(mean(failed_progression_indices))
+    failed_progression_indices_mean = mean(failed_progression_indices)
+    sample_two = []
+    for reassigned_prog in average_priority:
+        if reassigned_prog == _arbitrary_high_value:
+            sample_two.append(mean(failed_progression_indices))
         else:
-            corre2.append(reassigned_prog)
-    #reassigns failed progressions at the end (makes corre2)
-    # print(corre1)
-    # print(corre2)
-    # print(sorted(corre2))
+            sample_two.append(reassigned_prog)
+    # reassigns failed progressions at the end (makes sample_two)
+    # print(sample_one)
+    # print(sample_two)
+    # print(sorted(sample_two))
 
-    return s.spearmanr(corre1, corre2)
-    #outputs Spearman correlation value based on corre1 and corre2 list
+    # outputs Spearman correlation value based on sample_one and sample_two list
+    return s.spearmanr(sample_one, sample_two)
 
-spearman_corre = corre(test_list_of_chord_indices, 2)
-print(spearman_corre)
 
+if __name__ == "__main__":
+    # Setup
+    testlist1 = [FigBass("I", ""), FigBass("IV", ""), FigBass("V", "")]
+    (test_list_of_chord_indices, ALL_chord_configs) = find_best_progression("C", Accidental.Sharp, testlist1)
+
+    print(correlation(test_list_of_chord_indices, 2))
