@@ -1,11 +1,13 @@
 # Chord namer/beginning of RCM harmony shenanigans
 
 import copy
+
 # enables deepcopying
 from src.Music.MusicStructures import *
 
 # defining global variables
 ALL_chord_configs = []
+
 
 def chord_scale_namer(chord_or_scale: ChordOrScale,
                       root_name: str,
@@ -292,8 +294,8 @@ def all_chord_configs(root_name: str,
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        note_list = [cur_chord.bass.name + cur_chord.bass.accidental.value,
-                     cur_chord.tenor.name + cur_chord.tenor.accidental.value]
+        note_list = [cur_chord.bass.name + cur_chord.bass.accidental.value[0],
+                     cur_chord.tenor.name + cur_chord.tenor.accidental.value[0]]
         result = set(mark_duplicate(note_list)).issubset(mark_duplicate(all_notes))
         if result:
             filtered_chords.append(cur_chord)
@@ -318,9 +320,9 @@ def all_chord_configs(root_name: str,
 
     filtered_chords = []
     for cur_chord in chord_configs:
-        note_list = [cur_chord.bass.name + cur_chord.bass.accidental.value,
-                     cur_chord.tenor.name + cur_chord.tenor.accidental.value,
-                     cur_chord.alto.name + cur_chord.alto.accidental.value]
+        note_list = [cur_chord.bass.name + cur_chord.bass.accidental.string,
+                     cur_chord.tenor.name + cur_chord.tenor.accidental.string,
+                     cur_chord.alto.name + cur_chord.alto.accidental.string]
         result = set(mark_duplicate(note_list)).issubset(mark_duplicate(all_notes))
         if result:
             filtered_chords.append(cur_chord)
@@ -359,10 +361,10 @@ def all_chord_configs(root_name: str,
         # print(cur_chord.alto)
         # print(cur_chord.soprano)
 
-        note_list = [cur_chord.bass.name + cur_chord.bass.accidental.value,
-                     cur_chord.tenor.name + cur_chord.tenor.accidental.value,
-                     cur_chord.alto.name + cur_chord.alto.accidental.value,
-                     cur_chord.soprano.name + cur_chord.soprano.accidental.value]
+        note_list = [cur_chord.bass.name + cur_chord.bass.accidental.string,
+                     cur_chord.tenor.name + cur_chord.tenor.accidental.string,
+                     cur_chord.alto.name + cur_chord.alto.accidental.string,
+                     cur_chord.soprano.name + cur_chord.soprano.accidental.string]
         result = set(mark_duplicate(note_list)).issubset(mark_duplicate(all_notes))
 
         # print(result)
@@ -415,21 +417,21 @@ def lock_bass(chord_configurations: list[Chord], lock: str, bass_chord: list[str
                 if each_chord.bass.name == bass_chord[0]:
                     filtered_chords.append(each_chord)
             else:
-                if each_chord.bass.name + each_chord.bass.accidental.value == bass_chord[0]:
+                if each_chord.bass.name + each_chord.bass.accidental.string == bass_chord[0]:
                     filtered_chords.append(each_chord)
         elif lock == "third":
             if each_chord.bass.accidental == Accidental.Natural:
                 if each_chord.bass.name == bass_chord[1]:
                     filtered_chords.append(each_chord)
             else:
-                if each_chord.bass.name + each_chord.bass.accidental.value == bass_chord[1]:
+                if each_chord.bass.name + each_chord.bass.accidental.string == bass_chord[1]:
                     filtered_chords.append(each_chord)
         elif lock == "fifth":
             if each_chord.bass.accidental == Accidental.Natural:
                 if each_chord.bass.name == bass_chord[2]:
                     filtered_chords.append(each_chord)
             else:
-                if each_chord.bass.name + each_chord.bass.accidental.value == bass_chord[2]:
+                if each_chord.bass.name + each_chord.bass.accidental.string == bass_chord[2]:
                     filtered_chords.append(each_chord)
         elif lock == "seventh":
             if each_chord.bass.accidental == Accidental.Natural:
@@ -548,10 +550,11 @@ def find_best_progression(root_name: str,
                           root_accidental: Accidental,
                           list_of_figured_basses: list[FigBass]) -> (list[list[list[int]]], list[list[Chord]]):
     """
-    takes in a list of fig_bass objects, along with a root_name and root_accidental, and outputs the "best" chord progression
+    takes in a list of fig_bass objects, along with a root_name and root_accidental,
+    and outputs the "best" chord progression
     best is deemed through a minimal amount of movement
 
-    deal with doubling rules later
+    TODO deal with doubling rules
     """
     global ALL_chord_configs
     ALL_chord_configs = []

@@ -34,8 +34,12 @@ class Accidental(Enum):
         self.string: str = string
         self.semitone_offset: int = semitone_offset
 
+    @property
+    def get_string(self) -> str:
+        return self.value[0]
+
     @classmethod
-    def get_accidental(cls, string: str):
+    def get_accidental(cls, string: str) -> Accidental:
         """
         Returns an accidental value given a string
         TODO use switch statement/static dict
@@ -61,33 +65,32 @@ class Note:
         self.dur: float = dur
 
     def __str__(self):
-        return self.name + "," + str(self.accidental.value) + "," + str(self.pitch) + "," + str(self.dur)
+        return self.name + "," + str(self.accidental.string) + "," + str(self.pitch) + "," + str(self.dur)
 
     def __repr__(self):
-        return self.name + "," + str(self.accidental.value) + "," + str(self.pitch) + "," + str(self.dur)
+        return self.name + "," + str(self.accidental.string) + "," + str(self.pitch) + "," + str(self.dur)
 
     def __copy__(self):
         return self.copy()
 
     def fix_blank_accidental(self) -> None:
-        if self.accidental.value == '':
+        if self.accidental.string == '':
             self.accidental = Accidental.Natural
 
     def get_readable_version(self) -> str:
-        return self.name + str(self.accidental.value) + str(self.pitch)
+        return self.name + self.accidental.string + str(self.pitch)
 
     def copy(self) -> Note:
-        return Note(self.name, self.accidental.value, self.pitch, self.dur)
+        return Note(self.name, self.accidental, self.pitch, self.dur)
 
     @classmethod
     def note_from_string(cls, string: str) -> Note:
-        result = Note(string[0],
-                      Accidental.Natural if string[1:-1] == "" and string[-1].isdigit()
-                      else Accidental.Natural if string[1:] == "" and not string[-1].isdigit()
-                      else Accidental(string[1:-1]) if string[-1].isdigit()
-                      else Accidental(string[1:]),
-                      int(string[-1]) if string[-1].isdigit() else 100)
-        return result
+        return Note(string[0],
+                    Accidental.Natural if string[1:-1] == "" and string[-1].isdigit()
+                    else Accidental.Natural if string[1:] == "" and not string[-1].isdigit()
+                    else Accidental.get_accidental(string[1:-1]) if string[-1].isdigit()
+                    else Accidental.get_accidental(string[1:]),
+                    int(string[-1]) if string[-1].isdigit() else 100)
 
 
 def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
@@ -98,15 +101,13 @@ def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
     root_list = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
     lower_number = root_list.index(lower_note.name)
     upper_number = root_list.index(upper_note.name)
-    bass_interval = (upper_number - lower_number) + 1
     octave_diff = upper_note.pitch - lower_note.pitch
-    bass_interval = bass_interval + (octave_diff * 7)
+    bass_interval = (upper_number - lower_number) + 1 + (octave_diff * 7)
     # ^calculates the bass interval
 
     full_list = ['C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B',
                  'C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B']
-    lower_number_in_full = full_list.index(lower_note.name) + lower_note.accidental.semitone_offset
-    true_lower_number = lower_number_in_full + lower_note.accidental.semitone_offset
+    true_lower_number = full_list.index(lower_note.name) + lower_note.accidental.semitone_offset
     # ^finds the true lower number value based on name and accidental (can go all the way down to -2)
 
     if true_lower_number in [-1, -2]:
@@ -155,7 +156,8 @@ def precise_interval_calc(lower_note: Note, upper_note: Note) -> str:
     elif true_diff - expected_diff == 1:
         quality = "a"
     else:
-        raise Exception("Should never reach this point - can't find quality in precise_interval_calc")
+        raise Exception("Should never reach this point - can't find quality in precise_interval_calc from diff " +
+                        str(true_diff) + "," + str(expected_diff))
     # ^based on the differences of the true and expected semitone differences, gives the bass interval a quality
 
     true_interval = quality + str(bass_interval)
